@@ -235,7 +235,7 @@ input: PARTIAL_SUPPORT_FINISHED
     
 joypad: PARTIAL_SUPPORT_PLANNED
     Planned to Support:
-     - set
+     - none at this time
 
     No plans for support:
      - getimmediate ?
@@ -245,6 +245,7 @@ joypad: PARTIAL_SUPPORT_PLANNED
     
     Currently implemented:
      - get * alias of input.getjoy
+     - set
     
 LuaCanvas: NOT_PLANNED_FOR_SUPPORT
 
