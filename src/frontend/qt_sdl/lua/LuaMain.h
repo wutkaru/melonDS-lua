@@ -41,7 +41,7 @@ protected:
     Ui::LuaConsoleDialog* ui;
     bool lastRunning = false;//tracks script state so buttons only refresh on change
     void refreshButtons();
-    void loadScript(const QFileInfo& file);
+    void loadScript(QFileInfo file);
 signals:
     void signalNewLua();
     void signalClosing();

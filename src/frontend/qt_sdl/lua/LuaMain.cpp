@@ -61,7 +61,7 @@ void LuaConsoleDialog::refreshButtons()
 }
 
 //Points the dialog at a script and starts it, reporting what happened.
-void LuaConsoleDialog::loadScript(const QFileInfo& file)
+void LuaConsoleDialog::loadScript(QFileInfo file)
 {
     currentScript = file;
     ui->txtScriptPath->setText(file.absoluteFilePath());
@@ -176,6 +176,7 @@ void LuaBundle::createLuaState()
     if (!flagNewLua) return;
     overlays->clear();
     flagNewLua = false;
+    flagStop = false;//otherwise a previous Stop would kill this script too
     emuInstance->setLuaInputMask(0xFFF);
     luaState = nullptr;
     QByteArray fileName = luaDialog->currentScript.fileName().toLocal8Bit();
@@ -203,8 +204,13 @@ void LuaBundle::createLuaState()
 void LuaConsoleDialog::onStop()
 {
     bundle->getEmuInstance()->setLuaInputMask(0xFFF);
-    if (bundle->getLuaState()) 
+    if (bundle->getLuaState())
+    {
+        //The stop hook only fires from inside luaUpdate, which does nothing
+        //while paused, so a paused script has to be resumed to be stopped.
+        bundle->flagPause = false;
         bundle->flagStop = true;
+    }
 }
 
 void LuaConsoleDialog::onPausePlay()
