@@ -61,6 +61,7 @@ set(SOURCES_QT_SDL
     LANDialog.cpp
     NetplayDialog.cpp
 
+    lua/LuaConsoleDialog.ui
     lua/LuaMain.cpp
     lua/libs/LuaForms.cpp
     lua/libs/LuaGui.cpp

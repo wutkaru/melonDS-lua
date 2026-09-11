@@ -1,7 +1,10 @@
 #include "lua/LuaMain.h"
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QUrl>
+#include "ui_LuaConsoleDialog.h"
 
 LuaBundle::LuaBundle(LuaConsoleDialog* dialog, EmuInstance* inst)
 {
@@ -25,19 +28,48 @@ LuaConsoleDialog::LuaConsoleDialog(QWidget* parent) : QDialog(parent)
         if (!w) break;
     }
     bundle = new LuaBundle(this,mainWindow->getEmuInstance());
-    console = new LuaConsole(this);
-    console->setGeometry(0,20,302,80);
+    ui = new Ui::LuaConsoleDialog;
+    ui->setupUi(this);
+    console = ui->console;
     bar = console->verticalScrollBar();
-    buttonPausePlay = new QPushButton("Pause/UnPause",this);
-    buttonPausePlay->setGeometry(0,0,100,20);
-    buttonStartStop = new QPushButton("Stop",this);
-    buttonStartStop->setGeometry(101,0,100,20);
-    buttonOpenScript = new QPushButton("OpenLuaFile",this);
-    buttonOpenScript->setGeometry(202,0,100,20);
-    connect(buttonOpenScript,&QPushButton::clicked,this,&LuaConsoleDialog::onOpenScript);
-    connect(buttonStartStop,&QPushButton::clicked,this,&LuaConsoleDialog::onStop);
-    connect(buttonPausePlay,&QPushButton::clicked,this,&LuaConsoleDialog::onPausePlay);
-    this->setWindowTitle("Lua Script");
+    connect(ui->btnBrowse,&QPushButton::clicked,this,&LuaConsoleDialog::onOpenScript);
+    connect(ui->btnRun,&QPushButton::clicked,this,&LuaConsoleDialog::onRunScript);
+    connect(ui->btnEdit,&QPushButton::clicked,this,&LuaConsoleDialog::onEditScript);
+    connect(ui->btnStop,&QPushButton::clicked,this,&LuaConsoleDialog::onStop);
+    connect(ui->btnPause,&QPushButton::clicked,this,&LuaConsoleDialog::onPausePlay);
+    connect(ui->btnClear,&QPushButton::clicked,console,&LuaConsole::onClear);
+    refreshButtons();
+}
+
+LuaConsoleDialog::~LuaConsoleDialog()
+{
+    delete ui;
+}
+
+//Enables only the actions that make sense for the current script state.
+void LuaConsoleDialog::refreshButtons()
+{
+    bool hasScript = currentScript.exists();
+    bool running = bundle && bundle->getLuaState() != nullptr;
+    lastRunning = running;
+    ui->btnRun->setEnabled(hasScript);
+    ui->btnEdit->setEnabled(hasScript);
+    ui->btnStop->setEnabled(running);
+    ui->btnPause->setEnabled(running);
+    if (!running) bundle->flagPause = false;
+    ui->btnPause->setText(bundle->flagPause ? "Resume" : "Pause");
+}
+
+//Points the dialog at a script and starts it, reporting what happened.
+void LuaConsoleDialog::loadScript(QFileInfo file)
+{
+    currentScript = file;
+    ui->txtScriptPath->setText(file.absoluteFilePath());
+    setWindowTitle("Lua Script - " + file.fileName());
+    bundle->printText("Loaded " + file.absoluteFilePath());
+    bundle->flagPause = false;
+    bundle->flagNewLua = true;
+    refreshButtons();
 }
 
 void LuaConsoleDialog::closeEvent(QCloseEvent *event)
@@ -50,10 +82,28 @@ void LuaConsoleDialog::closeEvent(QCloseEvent *event)
 
 void LuaConsoleDialog::onOpenScript()
 {
-    QFileInfo file = QFileInfo(QFileDialog::getOpenFileName(this, "Load Lua Script",QDir::currentPath()));
+    //Reopen where the last script came from rather than always the cwd.
+    QString startDir = currentScript.exists() ? currentScript.dir().path() : QDir::currentPath();
+    QFileInfo file = QFileInfo(QFileDialog::getOpenFileName(this, "Load Lua Script",startDir,"Lua scripts (*.lua);;All files (*)"));
     if (!file.exists()) return;
-    currentScript = file;
-    bundle->flagNewLua = true;
+    loadScript(file);
+}
+
+void LuaConsoleDialog::onRunScript()
+{
+    if (!currentScript.exists())
+    {
+        bundle->printText("No script loaded.");
+        return;
+    }
+    //Re-reads the file from disk, so this doubles as a reload after editing.
+    loadScript(currentScript);
+}
+
+void LuaConsoleDialog::onEditScript()
+{
+    if (!currentScript.exists()) return;
+    QDesktopServices::openUrl(QUrl::fromLocalFile(currentScript.absoluteFilePath()));
 }
 
 LuaConsole::LuaConsole(QWidget* parent)
@@ -126,6 +176,8 @@ void LuaBundle::createLuaState()
     if (!flagNewLua) return;
     overlays->clear();
     flagNewLua = false;
+    flagStop = false;//otherwise a previous Stop would kill this script too
+    emuInstance->setLuaInputMask(0xFFF);
     luaState = nullptr;
     QByteArray fileName = luaDialog->currentScript.fileName().toLocal8Bit();
     QString filedir = luaDialog->currentScript.dir().path();
@@ -151,19 +203,30 @@ void LuaBundle::createLuaState()
 
 void LuaConsoleDialog::onStop()
 {
-    if (bundle->getLuaState()) 
+    bundle->getEmuInstance()->setLuaInputMask(0xFFF);
+    if (bundle->getLuaState())
+    {
+        //The stop hook only fires from inside luaUpdate, which does nothing
+        //while paused, so a paused script has to be resumed to be stopped.
+        bundle->flagPause = false;
         bundle->flagStop = true;
+    }
 }
 
 void LuaConsoleDialog::onPausePlay()
 {
     bundle->flagPause = !bundle->flagPause;
+    ui->btnPause->setText(bundle->flagPause ? "Resume" : "Pause");
 }
 
 void LuaConsoleDialog::onLuaUpdate()
 {
     bundle->createLuaState();
     bundle->luaUpdate();
+    //A script can stop on its own (error, or Stop taking effect), so keep the
+    //buttons honest without touching them every single frame.
+    if ((bundle->getLuaState() != nullptr) != lastRunning)
+        refreshButtons();
 }
 
 //Gets Called once a frame
@@ -180,6 +243,7 @@ void LuaBundle::luaUpdate()
     {
         //Handel Errors
         printText(lua_tostring(luaState,-1));
+        emuInstance->setLuaInputMask(0xFFF);
         luaState = nullptr;
     }
 }

@@ -458,14 +458,15 @@ template <typename T, bool Be=false> int Lua_ReadData(lua_State* L)
 	u32 address = luaL_checkinteger(L,1);
 	memoryDomain domain = L_checkForMemoryDomain(L,2);
 	s64 value=0;
-	u8* bits = (u8*)(&value)+(sizeof(s64)-sizeof(T));
+	//The value occupies the low bytes of the s64, mirroring Lua_WriteData.
+	u8* bits = (u8*)(&value);
 	if (address<=domain.size-sizeof(T))
 		domain.read(bits,address,sizeof(T));
 	if (Be) byteswap(bits,sizeof(T));
 	if (dummyIntType::isSigned<T>)
 	{
 		//if MSB is negative, set all 'unused' bytes in the s64 to 0xff 
-		if((*(s8*)(bits))<0) memset(&value,0xff,(sizeof(s64)-sizeof(T)));
+		if((*(s8*)(bits+sizeof(T)-1))<0) memset(bits+sizeof(T),0xff,(sizeof(s64)-sizeof(T)));
 	}
     lua_pushinteger(L, value);
     return 1;

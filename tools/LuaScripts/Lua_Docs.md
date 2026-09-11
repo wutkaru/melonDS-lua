@@ -75,6 +75,14 @@ end
     end
     ```
 
+`nil emu.reset()`
+- Resets the console, equivalent to the Reset hotkey. Raises an error if no ROM is loaded.
+
+`nil joypad.set(tButtons)`
+- Sets the 12 NDS joypad buttons from a lua table. Table keys are: `A,B,Select,Start,Right,Left,Up,Down,R,L,X,Y`.
+- Key matching is case-insensitive. Truthy values press a button; `false`, `nil`, and omitted buttons release it. Unknown keys are ignored.
+- The state remains latched until the next `joypad.set` call or until the lua script is stopped.
+
 `tKeyMask input.HeldKeys()`
 - Returns a lua table containing the value "true" for each held key and "nil" for any key not currently held. 
 - check the Qt docs for a list of key codes: https://doc.qt.io/qt-6/qt.html#Key-enum

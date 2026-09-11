@@ -1,4 +1,5 @@
 #include "lua/LuaMain.h"
+#include <cctype>
 
 std::vector<luaL_Reg> inputFunctions;// list of registered lua_CFunctions for this library
 LuaLibrary inputLibrary("input",&inputFunctions);//adds "input" to the list of luaLibraries
@@ -123,6 +124,53 @@ namespace luaJoypadDefinitions
 //Macro to register lua_CFunction with 'name' to the "joypad" library
 #define AddJoypadFunction(functPointer,name)LuaFunctionRegister name(functPointer,#name,&joypadFunctions)
 
+bool joypadKeyEquals(const char* left,const char* right)
+{
+    while (*left && *right)
+    {
+        if (std::tolower((unsigned char)*left) != std::tolower((unsigned char)*right))
+            return false;
+        left++;
+        right++;
+    }
+    return *left == *right;
+}
+
+int Lua_setJoy(lua_State* L)
+{
+    luaL_checktype(L,1,LUA_TTABLE);
+    LuaBundle* bundle = get_bundle(L);
+    melonDS::u32 buttonMask=0xFFF;
+    const char* keys[12] =
+    {
+        "A","B","Select","Start",
+        "Right","Left","Up","Down",
+        "R","L","X","Y"
+    };
+
+    lua_pushnil(L);
+    while (lua_next(L,1) != 0)
+    {
+        if (lua_type(L,-2) == LUA_TSTRING && lua_toboolean(L,-1))
+        {
+            const char* key = lua_tostring(L,-2);
+            for (melonDS::u32 i=0;i<12;i++)
+            {
+                if (joypadKeyEquals(key,keys[i]))
+                {
+                    buttonMask &= ~(1<<i);
+                    break;
+                }
+            }
+        }
+        lua_pop(L,1);
+    }
+
+    bundle->getEmuInstance()->setLuaInputMask(buttonMask);
+    return 0;
+}
+
 AddJoypadFunction(luaInputDefinitions::Lua_getJoy,get);//aliase for input.getjoy
+AddJoypadFunction(Lua_setJoy,set);
 
 }

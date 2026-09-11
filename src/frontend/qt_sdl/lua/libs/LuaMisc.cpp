@@ -122,6 +122,23 @@ int Lua_Framecount(lua_State* L)
     return 1;
 }
 AddEmuFunction(Lua_Framecount,framecount);
+
+//Resets the console, the same way the Reset hotkey does. emuReset() posts a
+//message to the emulation thread and waits for it, so this must not be called
+//from that thread - lua runs on the GUI thread, which is where the menu action
+//calls it from too.
+int Lua_Reset(lua_State* L)
+{
+    LuaBundle* bundle = get_bundle(L);
+    if (bundle->getEmuInstance()->getCartType() == -1)
+    {
+        luaL_error(L,"No ROM loaded.\n");
+        return 0;
+    }
+    bundle->getEmuThread()->emuReset();
+    return 0;
+}
+AddEmuFunction(Lua_Reset,reset);
 }
 
 std::vector<luaL_Reg> consoleFunctions;// list of registered lua_CFunctions for this library

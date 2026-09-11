@@ -102,6 +102,9 @@ emu: PARTIAL_SUPPORT_FINISHED / PLANNED
     Planned to Support:
      - frameadvance*
 
+    Currently implemented:
+     - reset
+
     No plans for support:
      - disassemble
      - displayvsync
@@ -233,9 +236,9 @@ input: PARTIAL_SUPPORT_FINISHED
      - getjoy
      - getjoystick
     
-joypad: PARTIAL_SUPPORT_PLANNED
+joypad: PARTIAL_SUPPORT_FINISHED
     Planned to Support:
-     - set
+     - none at this time
 
     No plans for support:
      - getimmediate ?
@@ -245,6 +248,7 @@ joypad: PARTIAL_SUPPORT_PLANNED
     
     Currently implemented:
      - get * alias of input.getjoy
+     - set
     
 LuaCanvas: NOT_PLANNED_FOR_SUPPORT
 

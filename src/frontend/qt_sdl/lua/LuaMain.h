@@ -20,17 +20,17 @@ class LuaBundle;
 
 struct memoryDomain;
 
+namespace Ui { class LuaConsoleDialog; }
+
 class LuaConsoleDialog: public QDialog
 {
     Q_OBJECT
 public:
     LuaConsoleDialog(QWidget* parent);
+    ~LuaConsoleDialog();
     LuaBundle* getLuaBundle(){return bundle;};
     LuaConsole* console;
     QFileInfo currentScript;
-    QPushButton* buttonOpenScript;
-    QPushButton* buttonStartStop;
-    QPushButton* buttonPausePlay;
     QScrollBar* bar;
     bool flagClosed;
     void onLuaSaveState(QString);
@@ -38,6 +38,10 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
     LuaBundle* bundle;
+    Ui::LuaConsoleDialog* ui;
+    bool lastRunning = false;//tracks script state so buttons only refresh on change
+    void refreshButtons();
+    void loadScript(QFileInfo file);
 signals:
     void signalNewLua();
     void signalClosing();
@@ -46,6 +50,8 @@ signals:
 public slots:
     //void onStartStop();
     void onOpenScript();
+    void onRunScript();
+    void onEditScript();
     void onStop();
     void onPausePlay();
     void onLuaUpdate();
