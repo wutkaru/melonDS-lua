@@ -233,7 +233,7 @@ input: PARTIAL_SUPPORT_FINISHED
      - getjoy
      - getjoystick
     
-joypad: PARTIAL_SUPPORT_PLANNED
+joypad: PARTIAL_SUPPORT_FINISHED
     Planned to Support:
      - none at this time
 
