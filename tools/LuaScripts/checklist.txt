@@ -102,6 +102,9 @@ emu: PARTIAL_SUPPORT_FINISHED / PLANNED
     Planned to Support:
      - frameadvance*
 
+    Currently implemented:
+     - reset
+
     No plans for support:
      - disassemble
      - displayvsync

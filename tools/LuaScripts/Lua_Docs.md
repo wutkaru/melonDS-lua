@@ -75,6 +75,9 @@ end
     end
     ```
 
+`nil emu.reset()`
+- Resets the console, equivalent to the Reset hotkey. Raises an error if no ROM is loaded.
+
 `nil joypad.set(tButtons)`
 - Sets the 12 NDS joypad buttons from a lua table. Table keys are: `A,B,Select,Start,Right,Left,Up,Down,R,L,X,Y`.
 - Key matching is case-insensitive. Truthy values press a button; `false`, `nil`, and omitted buttons release it. Unknown keys are ignored.
