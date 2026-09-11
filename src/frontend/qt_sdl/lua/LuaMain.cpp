@@ -126,6 +126,7 @@ void LuaBundle::createLuaState()
     if (!flagNewLua) return;
     overlays->clear();
     flagNewLua = false;
+    emuInstance->setLuaInputMask(0xFFF);
     luaState = nullptr;
     QByteArray fileName = luaDialog->currentScript.fileName().toLocal8Bit();
     QString filedir = luaDialog->currentScript.dir().path();
@@ -151,6 +152,7 @@ void LuaBundle::createLuaState()
 
 void LuaConsoleDialog::onStop()
 {
+    bundle->getEmuInstance()->setLuaInputMask(0xFFF);
     if (bundle->getLuaState()) 
         bundle->flagStop = true;
 }
@@ -180,6 +182,7 @@ void LuaBundle::luaUpdate()
     {
         //Handel Errors
         printText(lua_tostring(luaState,-1));
+        emuInstance->setLuaInputMask(0xFFF);
         luaState = nullptr;
     }
 }
