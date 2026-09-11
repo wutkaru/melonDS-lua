@@ -20,6 +20,7 @@
 #define EMUINSTANCE_H
 
 #include <SDL2/SDL.h>
+#include <atomic>
 
 #include "Platform.h"
 #include "main.h"
@@ -311,6 +312,8 @@ public:
     bool doAudioSync;
 
     melonDS::u32 getInputMask(){return inputMask;}
+    void setLuaInputMask(melonDS::u32 mask){luaInputMask.store(mask);}
+    melonDS::u32 getLuaInputMask(){return luaInputMask.load();}
     int getCartType(){return cartType;}
     std::string getbaseROMDir(){return baseROMDir;}
     std::string getbaseROMName(){return baseROMName;}
@@ -384,6 +387,7 @@ private:
     melonDS::u32 hotkeyPress, hotkeyRelease;
 
     melonDS::u32 inputMask;
+    std::atomic<melonDS::u32> luaInputMask;
 
     bool isTouching;
     melonDS::u16 touchX, touchY;
